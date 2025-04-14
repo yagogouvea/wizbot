@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 export default function Simulador({ fluxo }) {
@@ -14,16 +13,15 @@ export default function Simulador({ fluxo }) {
   const handleOpcao = (opcao) => {
     const novaMensagemUsuario = { tipo: 'usuario', texto: opcao.texto };
     const novaMensagemBot = { tipo: 'bot', texto: opcao.mensagem || '...' };
+
+    // Adiciona a resposta do usuário e do bot ao histórico
     setHistorico(prev => [...prev, novaMensagemUsuario, novaMensagemBot]);
 
-    setOpcoesTemp(null); // limpa opções da tela após clique
+    setOpcoesTemp(null); // Limpa as opções após clique
 
-    // 🔧 Correção: remove pilha se for submenu simples
-    if (topo.tipo === 'opcoes') {
-      setPilhaEtapas(prev => prev.slice(0, -1));
-    }
-
+    // Verifica qual ação foi escolhida e age conforme
     if (opcao.acao === 'submenu' && Array.isArray(opcao.submenu)) {
+      // Submenu: vai para o submenu e exibe novas opções
       if (opcao.submenu[0]?.opcoes) {
         setPilhaEtapas(prev => [...prev, { tipo: 'etapas', data: opcao.submenu }]);
         setIndiceEtapaAtual(0);
@@ -31,8 +29,31 @@ export default function Simulador({ fluxo }) {
         setPilhaEtapas(prev => [...prev, { tipo: 'opcoes', data: opcao.submenu }]);
         setOpcoesTemp(opcao.submenu);
       }
-    } else if (topo.tipo === 'etapas') {
+    } else {
+      // Enviar mensagem, enviar arquivo, redirecionar ou fim da simulação
+      if (opcao.acao === 'enviarMensagem') {
+        // Enviar Mensagem
+        setHistorico(prev => [...prev, { tipo: 'bot', texto: opcao.mensagem }]);
+      } else if (opcao.acao === 'enviarArquivo') {
+        // Simulação de envio de arquivo
+        setHistorico(prev => [...prev, { tipo: 'bot', texto: 'Arquivo enviado com sucesso!' }]);
+      } else if (opcao.acao === 'redirecionar') {
+        // Simulação de redirecionamento para outro número
+        setHistorico(prev => [...prev, { tipo: 'bot', texto: `Redirecionando para ${opcao.numero}...` }]);
+      }
+
+      // Finaliza a simulação com a mensagem de fim
+      setHistorico(prev => [...prev, { tipo: 'bot', texto: 'Fim da simulação.' }]);
+    }
+
+    // Caso a opção seja uma etapa, segue para a próxima etapa
+    if (topo.tipo === 'etapas') {
       setIndiceEtapaAtual(prev => prev + 1);
+    }
+
+    // Remover as opções anteriores quando mudar para um submenu
+    if (topo.tipo === 'opcoes') {
+      setPilhaEtapas(prev => prev.slice(0, -1)); // Remove a etapa de submenu da pilha
     }
   };
 
@@ -40,14 +61,14 @@ export default function Simulador({ fluxo }) {
     if (opcoesTemp) {
       setOpcoesTemp(null);
     } else if (topo.tipo === 'opcoes') {
-      setPilhaEtapas(prev => prev.slice(0, -1));
+      setPilhaEtapas(prev => prev.slice(0, -1)); // Remove o submenu
     } else if (indiceEtapaAtual > 0) {
-      setIndiceEtapaAtual(prev => prev - 1);
+      setIndiceEtapaAtual(prev => prev - 1); // Volta uma etapa
     } else if (pilhaEtapas.length > 1) {
-      setPilhaEtapas(prev => prev.slice(0, -1));
+      setPilhaEtapas(prev => prev.slice(0, -1)); // Remove a etapa anterior
       setIndiceEtapaAtual(0);
     }
-    setHistorico(h => h.slice(0, -2));
+    setHistorico(h => h.slice(0, -2)); // Remove as últimas mensagens
   };
 
   const handleResetar = () => {
